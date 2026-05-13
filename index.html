@@ -3,102 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PhuPha Store - รับเติมเกม ส่วนบุคคล</title>
+    <title>PhuPha Store - รับเติมเกมส์ ส่วนบุคคล</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
         .page-hidden { display: none !important; }
-        .admin-card { background: #1e293b; border-radius: 24px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        .input-field { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 14px; padding: 14px; width: 100%; outline: none; transition: 0.2s; }
-        .input-field:focus { border-color: #42B0FF; background: rgba(255,255,255,0.1); }
-        .btn-update { width: 100%; padding: 14px; border-radius: 14px; font-weight: bold; margin-top: 12px; transition: 0.2s; }
-        .btn-update:active { transform: scale(0.97); }
+        .admin-card { background: #1e293b; border-radius: 28px; padding: 24px; box-shadow: 0 15px 30px -5px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); }
+        .input-field { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 16px; padding: 16px; width: 100%; outline: none; font-size: 1.1rem; }
+        .input-field:focus { border-color: #42B0FF; background: rgba(255,255,255,0.12); }
+        .btn-update { width: 100%; padding: 16px; border-radius: 18px; font-weight: bold; margin-top: 15px; transition: 0.2s; font-size: 1rem; }
+        .btn-update:active { transform: scale(0.96); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
     </style>
 </head>
 <body>
 
     <nav class="p-4 bg-white shadow-sm sticky top-0 z-50 flex justify-between items-center border-b">
-        <div class="flex items-center space-x-2">
-            <div class="w-9 h-9 bg-[#42B0FF] rounded-lg flex items-center justify-center text-white font-bold shadow-sm">P</div>
-            <h1 class="font-bold text-slate-700">PhuPha Store</h1>
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-[#42B0FF] rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-blue-100">P</div>
+            <h1 class="font-bold text-slate-700 text-lg">PhuPha Store</h1>
         </div>
-        <button onclick="unlockAdmin()" class="text-slate-300 p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+        <button onclick="unlockAdmin()" class="text-slate-300 p-2 hover:text-blue-500 transition-colors">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </button>
     </nav>
 
-    <section id="page-user" class="max-w-md mx-auto p-4 space-y-4">
-        <div class="grid grid-cols-2 gap-3">
-            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm text-center">
-                <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">สต็อกเงิน</p>
-                <h2 id="stk-display" class="text-xl font-bold text-slate-700">0.00</h2>
+    <section id="page-user" class="max-w-md mx-auto p-5 space-y-5">
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white p-5 rounded-[32px] border border-slate-50 shadow-sm text-center">
+                <p class="text-slate-400 text-[10px] font-bold uppercase mb-1 tracking-wider">สต็อกเงิน</p>
+                <h2 id="stk-display" class="text-2xl font-bold text-slate-700">0.00</h2>
             </div>
-            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm text-center">
-                <p class="text-green-500 text-[10px] font-bold uppercase mb-1">ยอดขายรวม</p>
-                <h2 id="sales-display" class="text-xl font-bold text-slate-700">0.00</h2>
+            <div class="bg-white p-5 rounded-[32px] border border-slate-50 shadow-sm text-center">
+                <p class="text-green-500 text-[10px] font-bold uppercase mb-1 tracking-wider">ยอดขายรวม</p>
+                <h2 id="sales-display" class="text-2xl font-bold text-slate-700">0.00</h2>
             </div>
         </div>
 
-        <button onclick="document.getElementById('order-modal').classList.remove('hidden')" class="w-full bg-[#42B0FF] text-white font-bold py-5 rounded-2xl shadow-xl shadow-blue-100 text-lg active:scale-95 transition-transform">สั่งซื้อสินค้า</button>
+        <button onclick="document.getElementById('order-modal').classList.remove('hidden')" class="w-full bg-[#42B0FF] text-white font-bold py-5 rounded-[28px] shadow-xl shadow-blue-200 text-xl active:scale-95 transition-transform">สั่งซื้อสินค้า</button>
         
         <div id="user-history" class="space-y-3 pt-2"></div>
 
-        <div id="pagination-controls" class="flex items-center justify-center space-x-4 mt-6 page-hidden">
-            <button onclick="changePage(-1)" id="prevPage" class="bg-white p-3 rounded-xl shadow-sm text-blue-500 disabled:opacity-30 border">&lt;</button>
+        <div id="pagination-controls" class="flex items-center justify-center space-x-5 mt-6 page-hidden">
+            <button onclick="changePage(-1)" id="prevPage" class="bg-white p-4 rounded-2xl shadow-sm text-blue-500 disabled:opacity-30 border-none font-bold">&lt;</button>
             <span id="pageInfo" class="font-bold text-slate-500 text-lg">1</span>
-            <button onclick="changePage(1)" id="nextPage" class="bg-white p-3 rounded-xl shadow-sm text-blue-500 disabled:opacity-30 border">&gt;</button>
+            <button onclick="changePage(1)" id="nextPage" class="bg-white p-4 rounded-2xl shadow-sm text-blue-500 disabled:opacity-30 border-none font-bold">&gt;</button>
         </div>
     </section>
 
-    <section id="page-admin" class="page-hidden max-w-md mx-auto p-4 space-y-6">
+    <section id="page-admin" class="page-hidden max-w-md mx-auto p-5 space-y-6">
         <div class="flex justify-between items-center">
-            <h2 class="text-xl font-bold">Admin Management</h2>
-            <button onclick="location.reload()" class="text-red-500 font-bold text-xs bg-red-50 px-4 py-2 rounded-xl uppercase">Logout</button>
+            <h2 class="text-2xl font-bold text-slate-800">Admin Management</h2>
+            <button onclick="location.reload()" class="bg-red-500/10 text-red-500 px-5 py-2 rounded-2xl font-bold text-xs">LOGOUT</button>
         </div>
 
-        <div class="space-y-4">
+        <div class="space-y-5">
             <div class="admin-card">
-                <p class="text-blue-400 text-[10px] font-bold uppercase mb-3 tracking-widest">จัดการสต็อกเงินคงเหลือ</p>
-                <input id="input-stk-admin" type="number" class="input-field" placeholder="ระบุยอดสต็อกใหม่...">
-                <button onclick="updateSettings('stock', 'input-stk-admin')" class="btn-update bg-blue-500 text-white shadow-lg shadow-blue-900/20">บันทึกยอดสต็อก</button>
+                <p class="text-blue-400 text-[11px] font-bold uppercase mb-4 tracking-[0.2em]">จัดการสต็อกเงินคงเหลือ</p>
+                <input id="input-stk-admin" type="number" class="input-field" placeholder="0.00">
+                <button onclick="updateSettings('stock', 'input-stk-admin')" class="btn-update bg-[#42B0FF] text-white shadow-lg shadow-blue-900/40">บันทึกสต็อก</button>
             </div>
 
             <div class="admin-card">
-                <p class="text-green-400 text-[10px] font-bold uppercase mb-3 tracking-widest">จัดการยอดขายรวม</p>
-                <input id="input-sales-admin" type="number" class="input-field" placeholder="ระบุยอดขายใหม่...">
-                <button onclick="updateSettings('total_sales', 'input-sales-admin')" class="btn-update bg-green-500 text-white shadow-lg shadow-green-900/20">บันทึกยอดขายรวม</button>
+                <p class="text-green-400 text-[11px] font-bold uppercase mb-4 tracking-[0.2em]">จัดการยอดขายรวม</p>
+                <input id="input-sales-admin" type="number" class="input-field" placeholder="0.00">
+                <button onclick="updateSettings('total_sales', 'input-sales-admin')" class="btn-update bg-green-500 text-white shadow-lg shadow-green-900/40">บันทึกยอดขาย</button>
             </div>
         </div>
 
-        <div class="space-y-4 pt-4 border-t border-slate-200">
-            <h3 class="font-bold text-slate-400 text-[10px] uppercase px-2 tracking-widest">รายการออเดอร์ใหม่</h3>
+        <div class="space-y-4 pt-6 border-t border-slate-200">
+            <h3 class="font-bold text-slate-400 text-xs uppercase px-2 tracking-widest text-center">ออเดอร์ใหม่ที่ต้องตรวจสอบ</h3>
             <div id="admin-order-list" class="space-y-4"></div>
         </div>
     </section>
 
-    <div id="order-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-[35px] p-8 space-y-4 shadow-2xl">
-            <h3 class="text-xl font-bold text-center">ข้อมูลการสั่งซื้อ</h3>
-            <input id="f-game" type="text" placeholder="ชื่อเกม" class="w-full bg-slate-50 p-4 rounded-2xl border outline-none">
-            <input id="f-price" type="number" placeholder="ราคา" class="w-full bg-slate-50 p-4 rounded-2xl border outline-none">
-            <select id="f-cat" class="w-full bg-slate-50 p-4 rounded-2xl border outline-none appearance-none">
-                <option value="เงินในเกม">เงินในเกม</option>
-                <option value="สกิน/ไอเทม">สกิน / ไอเทม</option>
-                <option value="ไอดีเกม">ไอดีเกม</option>
+    <div id="order-modal" class="modal-overlay hidden">
+        <div class="bg-white w-full max-w-sm rounded-[40px] p-8 space-y-4 shadow-2xl">
+            <h3 class="text-2xl font-bold text-center mb-2">ข้อมูลการซื้อ</h3>
+            <input id="f-game" type="text" placeholder="ชื่อเกม" class="w-full bg-slate-50 p-4 rounded-2xl border-none outline-none ring-1 ring-slate-100 focus:ring-blue-400 transition-all">
+            <input id="f-price" type="number" placeholder="ราคา" class="w-full bg-slate-50 p-4 rounded-2xl border-none outline-none ring-1 ring-slate-100 focus:ring-blue-400 transition-all">
+            <select id="f-cat" class="w-full bg-slate-50 p-4 rounded-2xl border-none outline-none ring-1 ring-slate-100 focus:ring-blue-400 transition-all appearance-none">
+                <option value="เงินในเกม">หมวด: เงินในเกม</option>
+                <option value="สกิน/ไอเทม">หมวด: สกิน / ไอเทม</option>
+                <option value="ไอดีเกม">หมวด: ไอดีเกม</option>
             </select>
-            <div class="p-4 bg-blue-50/50 rounded-2xl border border-dashed border-blue-200">
-                <input id="f-img" type="file" accept="image/*" class="w-full text-xs">
+            <div class="p-5 bg-blue-50/50 rounded-2xl border-2 border-dashed border-blue-100">
+                <input id="f-img" type="file" accept="image/*" class="w-full text-xs text-slate-500">
             </div>
-            <div class="flex space-x-3 pt-2">
+            <div class="flex space-x-3 pt-3">
                 <button onclick="document.getElementById('order-modal').classList.add('hidden')" class="flex-1 py-4 text-slate-400 font-bold">ยกเลิก</button>
-                <button onclick="submitOrder()" class="flex-[2] bg-[#42B0FF] text-white py-4 rounded-2xl font-bold shadow-lg">ยืนยันการซื้อ</button>
+                <button onclick="submitOrder()" class="flex-[2] bg-[#42B0FF] text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-100">ยืนยันสั่งซื้อ</button>
             </div>
         </div>
     </div>
 
     <div id="auto-processing" class="page-hidden fixed inset-0 bg-white/95 backdrop-blur-xl flex flex-col items-center justify-center z-[1000] p-10 text-center">
-        <div class="w-14 h-14 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-        <h3 class="text-lg font-bold text-slate-800" id="process-title">กำลังประมวลผล...</h3>
+        <div class="w-16 h-16 border-[6px] border-blue-50 border-t-[#42B0FF] rounded-full animate-spin mb-6"></div>
+        <h3 class="text-xl font-bold text-slate-800" id="process-title">กำลังดำเนินการ...</h3>
     </div>
 
     <script>
@@ -132,27 +135,27 @@
 
         async function updateSettings(key, inputId) {
             const val = document.getElementById(inputId).value;
-            if(!val) return alert("กรุณาระบุจำนวนเงิน");
+            if(!val) return alert("ระบุจำนวนเงินที่ต้องการปรับ");
             
             document.getElementById('auto-processing').classList.remove('page-hidden');
-            document.getElementById('process-title').innerText = "กำลังบันทึก...";
+            document.getElementById('process-title').innerText = "บันทึกข้อมูล...";
 
             const { error } = await _sb.from('settings').update({ value: val }).eq('key', key);
             
             document.getElementById('auto-processing').classList.add('page-hidden');
             if(!error) {
-                alert("อัปเดตสำเร็จ!");
+                alert("อัปเดตค่า " + (key === 'stock' ? 'สต็อก' : 'ยอดขาย') + " สำเร็จ!");
                 document.getElementById(inputId).value = "";
                 fetchDashboard();
             } else {
-                alert("บันทึกไม่สำเร็จ: " + error.message);
+                alert("Error: หา Key นี้ใน Supabase ไม่เจอ!");
             }
         }
 
         async function submitOrder() {
             const game = document.getElementById('f-game').value, price = document.getElementById('f-price').value;
             const cat = document.getElementById('f-cat').value, file = document.getElementById('f-img').files[0];
-            if(!game || !price || !file) return alert("กรอกข้อมูลไม่ครบ");
+            if(!game || !price || !file) return alert("กรุณาใส่ข้อมูลให้ครบถ้วน");
 
             document.getElementById('auto-processing').classList.remove('page-hidden');
             const reader = new FileReader();
@@ -173,7 +176,7 @@
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
             formData.append('photo', file);
-            formData.append('caption', `🔔 *ออเดอร์ใหม่!*\n\n🆔 ID: \`${oid}\`\n🎮 เกม: *${game}*\n💰 ราคา: *${price}฿*\n📂 หมวดหมู่: *${cat}*`);
+            formData.append('caption', `🔔 *ออเดอร์ใหม่*\n🆔 ID: \`${oid}\`\n🎮 เกม: *${game}*\n💰 ราคา: *${price}฿*\n📂 หมวด: *${cat}*`);
             formData.append('parse_mode', 'Markdown');
             const keyboard = { inline_keyboard: [[
                 { text: "✅ อนุมัติ", url: `${baseLink}&action=success` },
@@ -200,7 +203,7 @@
             const p = new URLSearchParams(window.location.search);
             const action = p.get('action'), oid = p.get('oid'), token = p.get('token');
             if (action && oid && token === ADMIN_PASS) {
-                if (action === 'success') await updateStatus(oid, 'success', 'อนุมัติผ่านระบบ');
+                if (action === 'success') await updateStatus(oid, 'success', 'อนุมัติอัตโนมัติ');
                 else {
                     const r = prompt("ระบุเหตุผลการปฏิเสธ:");
                     if(r) await updateStatus(oid, 'rejected', r);
@@ -210,7 +213,7 @@
         }
 
         function unlockAdmin() {
-            if(prompt("Admin Password:") === ADMIN_PASS) {
+            if(prompt("รหัสผ่านผู้ดูแล:") === ADMIN_PASS) {
                 document.getElementById('page-user').classList.add('page-hidden');
                 document.getElementById('page-admin').classList.remove('page-hidden');
                 fetchAdminOrders();
@@ -227,13 +230,13 @@
             document.getElementById('prevPage').disabled = currentPage === 1;
             document.getElementById('nextPage').disabled = currentPage === totalPages;
             document.getElementById('user-history').innerHTML = data.map(o => `
-                <div class="bg-white p-5 rounded-3xl border border-slate-100 flex justify-between items-center shadow-sm">
+                <div class="bg-white p-5 rounded-[28px] border border-slate-50 flex justify-between items-center shadow-sm">
                     <div>
                         <p class="font-bold text-slate-700">${o.game} - ${o.price}฿</p>
                         <p class="text-[10px] text-slate-400">ID: ${o.order_id} | ${o.category}</p>
-                        ${o.status === 'rejected' ? `<p class="text-[10px] text-red-500 font-bold mt-1">❌ ${o.reason}</p>` : ''}
+                        ${o.status === 'rejected' ? `<p class="text-[10px] text-red-500 font-bold mt-1">เหตุผล: ${o.reason}</p>` : ''}
                     </div>
-                    <span class="text-[10px] font-bold px-3 py-1.5 rounded-full ${o.status === 'success' ? 'bg-green-50 text-green-500' : 'bg-amber-50 text-amber-500'} uppercase">${o.status}</span>
+                    <span class="text-[10px] font-bold px-4 py-2 rounded-full ${o.status === 'success' ? 'bg-green-50 text-green-500' : 'bg-amber-50 text-amber-500'} uppercase">${o.status}</span>
                 </div>
             `).join('');
         }
@@ -243,194 +246,15 @@
         async function fetchAdminOrders() {
             const { data } = await _sb.from('orders').select('*').eq('status', 'pending').order('created_at', {ascending: false});
             document.getElementById('admin-order-list').innerHTML = data.map(o => `
-                <div class="bg-white p-5 rounded-[30px] border space-y-4 shadow-sm">
-                    <p class="font-bold text-slate-700">${o.game} (${o.price}฿)</p>
-                    <img src="${o.image_url}" class="w-full h-44 object-cover rounded-2xl border">
+                <div class="bg-white p-5 rounded-[35px] border border-slate-50 space-y-4 shadow-sm">
+                    <p class="font-bold text-slate-700 text-lg">${o.game} (${o.price}฿)</p>
+                    <img src="${o.image_url}" class="w-full h-48 object-cover rounded-3xl border">
                     <div class="flex space-x-2">
-                        <button onclick="updateStatus('${o.order_id}', 'success', 'Manual')" class="flex-1 bg-green-500 text-white py-4 rounded-xl font-bold uppercase text-xs">อนุมัติ</button>
-                        <button onclick="const r=prompt('ระบุเหตุผล:'); if(r) updateStatus('${o.order_id}', 'rejected', r)" class="flex-1 bg-red-500 text-white py-4 rounded-xl font-bold uppercase text-xs">ปฏิเสธ</button>
+                        <button onclick="updateStatus('${o.order_id}', 'success', 'Admin Approve')" class="flex-1 bg-green-500 text-white py-4 rounded-2xl font-bold uppercase text-xs">อนุมัติ</button>
+                        <button onclick="const r=prompt('ระบุเหตุผล:'); if(r) updateStatus('${o.order_id}', 'rejected', r)" class="flex-1 bg-red-500 text-white py-4 rounded-2xl font-bold uppercase text-xs">ปฏิเสธ</button>
                     </div>
                 </div>
-            `).join('') || '<p class="text-center text-slate-300 py-10 text-xs uppercase tracking-widest">ไม่มีออเดอร์ค้าง</p>';
-        }
-    </script>
-</body>
-</html>
-            <div class="admin-card">
-                <p class="text-green-400 text-[10px] font-bold uppercase mb-3 tracking-widest">จัดการยอดขายรวม</p>
-                <input id="input-sales" type="number" class="input-field" placeholder="ใส่จำนวนยอดขาย...">
-                <button onclick="updateSettings('total_sales', 'input-sales')" class="btn-update bg-green-500 text-white">อัปเดตยอดขาย</button>
-            </div>
-        </div>
-
-        <div class="space-y-4 pt-4">
-            <h3 class="font-bold text-slate-500 text-xs uppercase px-2">รายการออเดอร์ใหม่</h3>
-            <div id="admin-order-list" class="space-y-4"></div>
-        </div>
-    </section>
-
-    <div id="order-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 space-y-4">
-            <h3 class="text-lg font-bold text-center">สั่งซื้อสินค้า</h3>
-            <input id="f-game" type="text" placeholder="ชื่อเกม" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
-            <input id="f-price" type="number" placeholder="ราคา" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
-            <select id="f-cat" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
-                <option value="เงินในเกม">เงินในเกม</option>
-                <option value="สกิน/ไอเทม">สกิน / ไอเทม</option>
-                <option value="ไอดีเกม">ไอดีเกม</option>
-            </select>
-            <input id="f-img" type="file" accept="image/*" class="w-full text-xs bg-slate-50 p-3 rounded-xl border">
-            <div class="flex space-x-2 pt-2">
-                <button onclick="document.getElementById('order-modal').classList.add('hidden')" class="flex-1 py-3 text-slate-400 font-bold">ยกเลิก</button>
-                <button onclick="submitOrder()" class="flex-[2] bg-[#42B0FF] text-white py-3 rounded-xl font-bold shadow-lg">ยืนยัน</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="auto-processing" class="page-hidden fixed inset-0 bg-white/90 backdrop-blur-md flex flex-col items-center justify-center z-[1000] p-6 text-center">
-        <div class="w-12 h-12 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-        <p class="font-bold text-slate-700" id="process-title">กำลังประมวลผล...</p>
-    </div>
-
-    <script>
-        const SB_URL = "https://devpwalvthufklbqtozw.supabase.co";
-        const SB_KEY = "sb_publishable_jLl5GwgE4JUlGylq0KSrOQ_sOFPG3Gj";
-        const TG_BOT_TOKEN = "8301236781:AAE0V-SQx7Jtc8tlKSZLebScu6hnvHqy0aE";
-        const CHAT_ID = "8033387742";
-        const ADMIN_PASS = "Inwza007";
-
-        const _sb = supabase.createClient(SB_URL, SB_KEY);
-        let currentPage = 1, itemsPerPage = 4;
-        let myOrderIds = JSON.parse(localStorage.getItem('my_orders') || '[]');
-
-        window.onload = () => {
-            fetchDashboard(); fetchUserHistory(); checkDeepLink();
-            _sb.channel('realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-                fetchDashboard(); fetchUserHistory(); 
-                if(!document.getElementById('page-admin').classList.contains('page-hidden')) fetchAdminOrders();
-            }).on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, fetchDashboard).subscribe();
-        };
-
-        async function fetchDashboard() {
-            const { data } = await _sb.from('settings').select('key, value');
-            if(data) {
-                const stock = data.find(i => i.key === 'stock')?.value || "0.00";
-                const sales = data.find(i => i.key === 'total_sales')?.value || "0.00";
-                document.getElementById('stk-display').innerText = parseFloat(stock).toLocaleString() + " ฿";
-                document.getElementById('sales-display').innerText = parseFloat(sales).toLocaleString() + " ฿";
-            }
-        }
-
-        async function updateSettings(key, inputId) {
-            const val = document.getElementById(inputId).value;
-            if(!val) return alert("กรุณาระบุจำนวนเงิน");
-            const { error } = await _sb.from('settings').update({ value: val }).eq('key', key);
-            if(!error) alert("อัปเดตสำเร็จ!");
-        }
-
-        async function submitOrder() {
-            const game = document.getElementById('f-game').value, price = document.getElementById('f-price').value;
-            const cat = document.getElementById('f-cat').value, file = document.getElementById('f-img').files[0];
-            if(!game || !price || !file) return alert("กรุณากรอกข้อมูลให้ครบ");
-
-            document.getElementById('auto-processing').classList.remove('page-hidden');
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                const oid = 'PH-' + Math.floor(1000 + Math.random() * 9000);
-                await _sb.from('orders').insert([{ order_id: oid, game, price, category: cat, image_url: reader.result, status: 'pending' }]);
-                await sendTelegram(oid, game, price, cat, file);
-                myOrderIds.unshift(oid);
-                localStorage.setItem('my_orders', JSON.stringify(myOrderIds));
-                location.reload();
-            };
-        }
-
-        async function sendTelegram(oid, game, price, cat, file) {
-            const currentUrl = window.location.href.split('?')[0];
-            const baseLink = `${currentUrl}?oid=${oid}&token=${ADMIN_PASS}`;
-            const formData = new FormData();
-            formData.append('chat_id', CHAT_ID);
-            formData.append('photo', file);
-            formData.append('caption', `🔔 *ออเดอร์ใหม่!*\n\n🆔 ID: \`${oid}\`\n🎮 เกม: *${game}*\n💰 ราคา: *${price}฿*\n📂 หมวดหมู่: *${cat}*`);
-            formData.append('parse_mode', 'Markdown');
-            const keyboard = { inline_keyboard: [[
-                { text: "✅ อนุมัติ", url: `${baseLink}&action=success` },
-                { text: "❌ ปฏิเสธ", url: `${baseLink}&action=rejected` }
-            ]]};
-            formData.append('reply_markup', JSON.stringify(keyboard));
-            await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendPhoto`, { method: 'POST', body: formData });
-        }
-
-        async function updateStatus(oid, status, reason) {
-            document.getElementById('auto-processing').classList.remove('page-hidden');
-            const { error } = await _sb.from('orders').update({ status, reason }).eq('order_id', oid);
-            if (!error) {
-                await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ chat_id: CHAT_ID, text: `✅ [System] จัดการออเดอร์ ${oid} เป็น ${status.toUpperCase()} เรียบร้อยแล้ว` })
-                });
-                setTimeout(() => location.href = window.location.pathname, 1000);
-            }
-        }
-
-        async function checkDeepLink() {
-            const p = new URLSearchParams(window.location.search);
-            const action = p.get('action'), oid = p.get('oid'), token = p.get('token');
-            if (action && oid && token === ADMIN_PASS) {
-                if (action === 'success') await updateStatus(oid, 'success', 'อนุมัติผ่าน Telegram');
-                else {
-                    const r = prompt("ระบุเหตุผลการปฏิเสธ:");
-                    if(r) await updateStatus(oid, 'rejected', r);
-                    else location.href = window.location.pathname;
-                }
-            }
-        }
-
-        function unlockAdmin() {
-            if(prompt("Admin Password:") === ADMIN_PASS) {
-                document.getElementById('page-user').classList.add('page-hidden');
-                document.getElementById('page-admin').classList.remove('page-hidden');
-                fetchAdminOrders();
-            }
-        }
-
-        async function fetchUserHistory() {
-            if(myOrderIds.length === 0) return;
-            document.getElementById('pagination-controls').classList.remove('page-hidden');
-            const start = (currentPage - 1) * itemsPerPage, end = start + itemsPerPage - 1;
-            const { data } = await _sb.from('orders').select('*').in('order_id', myOrderIds).order('created_at', {ascending: false}).range(start, end);
-            const totalPages = Math.ceil(myOrderIds.length / itemsPerPage);
-            document.getElementById('pageInfo').innerText = currentPage;
-            document.getElementById('prevPage').disabled = currentPage === 1;
-            document.getElementById('nextPage').disabled = currentPage === totalPages;
-            document.getElementById('user-history').innerHTML = data.map(o => `
-                <div class="bg-white p-4 rounded-2xl border flex justify-between items-center shadow-sm">
-                    <div>
-                        <p class="font-bold text-slate-700 text-sm">${o.game} - ${o.price}฿</p>
-                        <p class="text-[10px] text-slate-400">ID: ${o.order_id} | ${o.category}</p>
-                        ${o.status === 'rejected' ? `<p class="text-[10px] text-red-500 font-bold mt-1">❌ ${o.reason}</p>` : ''}
-                    </div>
-                    <span class="text-[10px] font-bold px-3 py-1 rounded-full ${o.status === 'success' ? 'bg-green-50 text-green-500' : 'bg-amber-50 text-amber-500'} uppercase">${o.status}</span>
-                </div>
-            `).join('');
-        }
-
-        function changePage(step) { currentPage += step; fetchUserHistory(); }
-
-        async function fetchAdminOrders() {
-            const { data } = await _sb.from('orders').select('*').eq('status', 'pending').order('created_at', {ascending: false});
-            document.getElementById('admin-order-list').innerHTML = data.map(o => `
-                <div class="bg-white p-4 rounded-3xl border space-y-3 shadow-sm">
-                    <p class="font-bold text-sm text-slate-700">${o.game} (${o.price}฿)</p>
-                    <img src="${o.image_url}" class="w-full h-40 object-cover rounded-2xl border">
-                    <div class="flex space-x-2">
-                        <button onclick="updateStatus('${o.order_id}', 'success', 'อนุมัติโดยแอดมิน')" class="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold text-xs uppercase">อนุมัติ</button>
-                        <button onclick="const r=prompt('ระบุเหตุผล:'); if(r) updateStatus('${o.order_id}', 'rejected', r)" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold text-xs uppercase">ปฏิเสธ</button>
-                    </div>
-                </div>
-            `).join('') || '<p class="text-center text-slate-300 py-10 text-xs uppercase tracking-widest">ไม่มีออเดอร์ค้าง</p>';
+            `).join('') || '<p class="text-center text-slate-300 py-10 text-xs uppercase tracking-widest">ไม่มีรายการค้างตรวจสอบ</p>';
         }
     </script>
 </body>
