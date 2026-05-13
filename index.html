@@ -3,24 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PhuPha Store - Telegram Link Control</title>
+    <title>PhuPha Store - Inline Buttons Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f1f5f9; overflow-x: hidden; }
+        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; }
         .page-hidden { display: none !important; }
-        /* แก้ไขให้ Modal อยู่กึ่งกลางหน้าจอเป๊ะทุกอุปกรณ์ */
         .modal-overlay { 
-            position: fixed; 
-            inset: 0; 
-            background-color: rgba(0,0,0,0.6); 
-            backdrop-filter: blur(4px);
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 20px; 
-            z-index: 9999; 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 999; 
         }
         .btn-primary { background-color: #42B0FF; transition: 0.2s; }
         .btn-primary:active { transform: scale(0.95); }
@@ -30,12 +22,10 @@
 
     <nav class="p-5 bg-white shadow-sm sticky top-0 z-50 flex justify-between items-center">
         <div class="flex items-center space-x-2">
-            <div class="w-10 h-10 bg-[#42B0FF] rounded-xl flex items-center justify-center text-white font-bold shadow-lg">P</div>
-            <h1 class="font-bold text-lg">PhuPha <span class="text-[#42B0FF]">Store</span></h1>
+            <div class="w-10 h-10 bg-[#42B0FF] rounded-xl flex items-center justify-center text-white font-bold">P</div>
+            <h1 class="font-bold text-lg">PhuPha Store</h1>
         </div>
-        <button onclick="unlockAdmin()" class="text-slate-300 p-2">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-        </button>
+        <button onclick="unlockAdmin()" class="text-slate-300 p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg></button>
     </nav>
 
     <section id="page-user" class="max-w-md mx-auto p-5 space-y-6">
@@ -43,26 +33,26 @@
             <p class="text-slate-400 text-[10px] font-bold uppercase mb-1">ยอดสต็อกคงเหลือ</p>
             <h2 id="stk-display" class="text-5xl font-bold text-slate-700">0.00 <span class="text-xl text-[#42B0FF]">฿</span></h2>
         </div>
-        <button onclick="openModal()" class="w-full btn-primary text-white font-bold py-5 rounded-[24px] shadow-xl text-lg">สั่งซื้อสินค้า</button>
+        <button onclick="openModal()" class="w-full btn-primary text-white font-bold py-5 rounded-3xl shadow-xl text-lg">สั่งซื้อสินค้า</button>
         <div id="user-history" class="space-y-3 mt-4"></div>
     </section>
 
     <section id="page-admin" class="page-hidden max-w-md mx-auto p-5 space-y-6">
         <div class="flex justify-between items-center">
             <h2 class="text-2xl font-bold">Admin Panel</h2>
-            <button onclick="location.reload()" class="text-red-500 font-bold">ปิด</button>
+            <button onclick="location.reload()" class="text-red-500 font-bold">ปิดหน้าต่าง</button>
         </div>
         <div class="bg-slate-900 p-6 rounded-[30px] space-y-3 text-white">
-            <p class="text-xs font-bold text-slate-400">แก้ไขสต็อก (ใส่ตัวเลข)</p>
+            <p class="text-xs font-bold text-slate-400">ปรับยอดเงินสต็อก</p>
             <input id="input-stk" type="number" class="w-full bg-white/10 p-4 rounded-2xl outline-none" placeholder="0.00">
-            <button onclick="updateStock()" class="w-full bg-[#42B0FF] text-white py-4 rounded-2xl font-bold">บันทึกสต็อก</button>
+            <button onclick="updateStock()" class="w-full bg-[#42B0FF] text-white py-4 rounded-2xl font-bold">บันทึกยอด</button>
         </div>
         <div id="admin-order-list" class="space-y-4"></div>
     </section>
 
     <div id="order-modal" class="modal-overlay hidden">
         <div class="bg-white w-full max-w-sm rounded-[35px] p-8 space-y-4 shadow-2xl">
-            <h3 class="text-xl font-bold text-center">รายละเอียดออเดอร์</h3>
+            <h3 class="text-xl font-bold text-center">ส่งออเดอร์ใหม่</h3>
             <input id="f-game" type="text" placeholder="ชื่อเกม" class="w-full bg-slate-50 p-4 rounded-2xl border outline-none">
             <input id="f-price" type="number" placeholder="ราคา" class="w-full bg-slate-50 p-4 rounded-2xl border outline-none">
             <select id="f-cat" class="w-full bg-slate-50 p-4 rounded-2xl border outline-none">
@@ -70,12 +60,11 @@
                 <option value="สกิน/ไอเทม">สกิน / ไอเทม</option>
             </select>
             <div class="p-4 bg-blue-50 rounded-2xl border-dashed border-2 border-blue-200 text-center">
-                <label class="text-[10px] font-bold text-blue-500 block mb-2">แนบรูปสลิป</label>
                 <input id="f-img" type="file" accept="image/*" class="w-full text-xs">
             </div>
-            <div class="flex space-x-3 pt-4">
+            <div class="flex space-x-3 pt-2">
                 <button onclick="closeModal()" class="flex-1 py-4 text-slate-400 font-bold">ยกเลิก</button>
-                <button onclick="submitOrder()" id="btn-submit" class="flex-[2] btn-primary text-white py-4 rounded-2xl font-bold shadow-lg">ยืนยัน</button>
+                <button onclick="submitOrder()" id="btn-submit" class="flex-[2] btn-primary text-white py-4 rounded-2xl font-bold">ส่งข้อมูล</button>
             </div>
         </div>
     </div>
@@ -99,16 +88,13 @@
             }).on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, fetchStock).subscribe();
         };
 
-        // ระบบรับคำสั่งเมื่อกดลิงก์จาก Telegram
         async function checkDeepLink() {
-            const params = new URLSearchParams(window.location.search);
-            const action = params.get('action');
-            const oid = params.get('oid');
-            if (action && oid) {
-                const code = prompt("รหัส Admin เพื่อยืนยันออเดอร์:");
+            const p = new URLSearchParams(window.location.search);
+            if (p.get('action') && p.get('oid')) {
+                const code = prompt("รหัส Admin:");
                 if(code === ADMIN_PASS) {
                     unlockAdminView();
-                    await updateStatus(oid, action);
+                    await updateStatus(p.get('oid'), p.get('action'));
                 }
             }
         }
@@ -126,48 +112,48 @@
             const price = document.getElementById('f-price').value;
             const cat = document.getElementById('f-cat').value;
             const file = document.getElementById('f-img').files[0];
-            if(!game || !price || !file) return alert("กรอกข้อมูลและเลือกรูปภาพ!");
+            if(!game || !price || !file) return alert("กรอกข้อมูลให้ครบ!");
 
             const btn = document.getElementById('btn-submit');
-            btn.disabled = true; btn.innerText = "กำลังอัปโหลด...";
+            btn.disabled = true; btn.innerText = "กำลังส่ง...";
 
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = async () => {
                 const oid = 'PH-' + Math.floor(1000 + Math.random() * 9000);
-                const { error } = await _sb.from('orders').insert([{ order_id: oid, game, price, category: cat, image_url: reader.result, status: 'pending' }]);
-                
+                const { error } = await _sb.from('orders').insert([{ 
+                    order_id: oid, game, price, category: cat, image_url: reader.result, status: 'pending' 
+                }]);
+
                 if(!error) {
-                    await sendTelegram(oid, game, price, cat, file);
+                    await sendTelegramWithButtons(oid, game, price, cat, file);
                     let local = JSON.parse(localStorage.getItem('my_orders') || '[]');
                     local.unshift(oid);
                     localStorage.setItem('my_orders', JSON.stringify(local));
-                    alert("ส่งออเดอร์สำเร็จ!");
+                    alert("ส่งออเดอร์แล้ว!");
                     location.reload();
                 }
             };
         }
 
-        // --- ระบบส่ง Telegram แบบบังคับให้เป็นลิงก์ ---
-        async function sendTelegram(oid, game, price, cat, file) {
+        // --- ฟังก์ชันที่ทำให้ปุ่มปรากฏใต้รูปภาพ ---
+        async function sendTelegramWithButtons(oid, game, price, cat, file) {
             const currentUrl = window.location.href.split('?')[0];
             
-            const caption = `🔔 *มีออเดอร์ใหม่!*
-━━━━━━━━━━━━
-🆔 ID: \`${oid}\`
-🎮 เกม: *${game}*
-💰 ราคา: *${price}฿*
-📂 หมวดหมู่: *${cat}*
-
-💬 *จัดการออเดอร์ (กดที่ลิงก์):*
-✅ [คลิกเพื่ออนุมัติ (OK)](${currentUrl}?action=success&oid=${oid})
-❌ [คลิกเพื่อปฏิเสธ (NO)](${currentUrl}?action=rejected&oid=${oid})`;
-
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
             formData.append('photo', file);
-            formData.append('caption', caption);
+            formData.append('caption', `🔔 *ออเดอร์ใหม่*\n🆔 ID: \`${oid}\`\n🎮 เกม: *${game}*\n💰 ราคา: *${price}฿*`);
             formData.append('parse_mode', 'Markdown');
+
+            // บังคับสร้างปุ่ม (ต้องรันผ่าน https เท่านั้นปุ่มถึงจะโชว์)
+            const keyboard = {
+                inline_keyboard: [[
+                    { text: "✅ อนุมัติ (OK)", url: `${currentUrl}?action=success&oid=${oid}` },
+                    { text: "❌ ปฏิเสธ (NO)", url: `${currentUrl}?action=rejected&oid=${oid}` }
+                ]]
+            };
+            formData.append('reply_markup', JSON.stringify(keyboard));
 
             await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendPhoto`, { method: 'POST', body: formData });
         }
@@ -182,15 +168,12 @@
                         <p class="font-bold text-slate-700">${o.game} - ${o.price}฿</p>
                         <p class="text-[10px] text-slate-400">🆔 ${o.order_id}</p>
                     </div>
-                    <span class="text-[9px] font-bold px-3 py-1.5 rounded-full ${o.status === 'success' ? 'bg-green-50 text-green-500' : 'bg-amber-50 text-amber-500'}">${o.status}</span>
+                    <span class="text-[9px] font-bold uppercase px-3 py-1.5 rounded-full ${o.status === 'success' ? 'bg-green-50 text-green-500' : 'bg-amber-50 text-amber-500'}">${o.status}</span>
                 </div>
             `).join('');
         }
 
-        function unlockAdmin() { 
-            if(prompt("รหัสผ่านผู้ดูแล:") === ADMIN_PASS) unlockAdminView(); 
-        }
-
+        function unlockAdmin() { if(prompt("รหัสผ่าน:") === ADMIN_PASS) unlockAdminView(); }
         function unlockAdminView() {
             document.getElementById('page-user').classList.add('page-hidden');
             document.getElementById('page-admin').classList.remove('page-hidden');
@@ -200,25 +183,25 @@
         async function updateStock() {
             const val = document.getElementById('input-stk').value;
             await _sb.from('settings').update({ value: val }).eq('key', 'stock');
-            alert("บันทึกสต็อกแล้ว");
+            alert("บันทึกสำเร็จ");
         }
 
         async function fetchAdminOrders() {
             const { data } = await _sb.from('orders').select('*').eq('status', 'pending').order('created_at', {ascending: false});
             document.getElementById('admin-order-list').innerHTML = data.map(o => `
-                <div class="bg-white p-6 rounded-[35px] border shadow-sm space-y-4">
-                    <p class="font-bold text-lg">${o.game} - ${o.price}฿</p>
-                    <img src="${o.image_url}" class="w-full h-48 object-cover rounded-3xl border">
+                <div class="bg-white p-6 rounded-[35px] border space-y-4">
+                    <p class="font-bold">${o.game} (${o.price}฿)</p>
+                    <img src="${o.image_url}" class="w-full h-48 object-cover rounded-3xl">
                     <div class="flex space-x-2">
                         <button onclick="updateStatus('${o.order_id}', 'success')" class="flex-1 bg-green-500 text-white py-4 rounded-2xl font-bold">อนุมัติ</button>
                         <button onclick="updateStatus('${o.order_id}', 'rejected')" class="flex-1 bg-red-500 text-white py-4 rounded-2xl font-bold">ปฏิเสธ</button>
                     </div>
                 </div>
-            `).join('') || '<p class="text-center text-slate-300 py-10">ไม่มีออเดอร์ค้าง</p>';
+            `).join('');
         }
 
         window.updateStatus = async (oid, status) => {
-            let reason = status === 'rejected' ? prompt("เหตุผลที่ปฏิเสธ:") : "สำเร็จ";
+            let reason = status === 'rejected' ? prompt("เหตุผล:") : "สำเร็จ";
             const { error } = await _sb.from('orders').update({ status, reason }).eq('order_id', oid);
             if(!error) {
                 fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
