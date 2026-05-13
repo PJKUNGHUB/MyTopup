@@ -16,6 +16,8 @@
         }
         .btn-primary { background-color: #42B0FF; transition: all 0.2s; }
         .btn-primary:active { transform: scale(0.95); }
+        .page-btn { padding: 8px 16px; background: white; border-radius: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -34,7 +36,14 @@
             <h2 id="stk-display" class="text-5xl font-bold text-slate-700">0.00 <span class="text-xl text-[#42B0FF]">฿</span></h2>
         </div>
         <button onclick="document.getElementById('order-modal').classList.remove('hidden')" class="w-full btn-primary text-white font-bold py-5 rounded-[25px] shadow-xl text-lg">สั่งซื้อสินค้า</button>
-        <div id="user-history" class="space-y-3 mt-4"></div>
+        
+        <div id="user-history" class="space-y-3 pt-4"></div>
+
+        <div id="pagination-controls" class="flex items-center justify-center space-x-4 mt-6 page-hidden">
+            <button onclick="changePage(-1)" id="prevPage" class="page-btn text-[#42B0FF]">&lt;</button>
+            <span id="pageInfo" class="font-bold text-slate-600 text-lg">1</span>
+            <button onclick="changePage(1)" id="nextPage" class="page-btn text-[#42B0FF]">&gt;</button>
+        </div>
     </section>
 
     <section id="page-admin" class="page-hidden max-w-md mx-auto p-5 space-y-6">
@@ -55,6 +64,11 @@
             <h3 class="text-xl font-bold text-center">ข้อมูลออเดอร์</h3>
             <input id="f-game" type="text" placeholder="ชื่อเกม" class="w-full bg-slate-50 p-4 rounded-2xl border outline-none">
             <input id="f-price" type="number" placeholder="ราคา" class="w-full bg-slate-50 p-4 rounded-2xl border outline-none">
+            <select id="f-cat" class="w-full bg-slate-50 p-4 rounded-2xl border outline-none appearance-none">
+                <option value="เงินในเกม">หมวดหมู่: เงินในเกม</option>
+                <option value="สกิน/ไอเทม">หมวดหมู่: สกิน / ไอเทม</option>
+                <option value="ID เกม">หมวดหมู่: ID เกม</option>
+            </select>
             <div class="p-4 bg-blue-50/50 rounded-2xl border border-dashed border-blue-200">
                 <input id="f-img" type="file" accept="image/*" class="w-full text-xs">
             </div>
@@ -73,6 +87,10 @@
         const ADMIN_PASS = "Inwza007";
 
         const _sb = supabase.createClient(SB_URL, SB_KEY);
+        
+        let currentPage = 1;
+        const itemsPerPage = 4;
+        let myOrderIds = JSON.parse(localStorage.getItem('my_orders') || '[]');
 
         window.onload = () => {
             fetchStock();
@@ -81,31 +99,97 @@
             _sb.channel('realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchUserHistory).subscribe();
         };
 
-        // --- ระบบ Auto-Action (Telegram & Web) ---
         async function checkDeepLink() {
             const p = new URLSearchParams(window.location.search);
-            const action = p.get('action');
-            const oid = p.get('oid');
-            const token = p.get('token');
-
+            const action = p.get('action'), oid = p.get('oid'), token = p.get('token');
             if (action && oid && token === ADMIN_PASS) {
-                // ถ้าเป็นอนุมัติ (Success) ให้ทำทันที
                 if (action === 'success') {
                     document.getElementById('auto-processing').classList.remove('page-hidden');
                     await updateStatus(oid, 'success', 'อนุมัติอัตโนมัติ');
-                } 
-                // ถ้าเป็นปฏิเสธ (Rejected) ให้ถามเหตุผลก่อน
-                else if (action === 'rejected') {
-                    const reason = prompt("ระบุเหตุผลการปฏิเสธ ออเดอร์ " + oid + ":");
+                } else if (action === 'rejected') {
+                    const reason = prompt("ระบุเหตุผลการปฏิเสธ:");
                     if (reason) {
                         document.getElementById('auto-processing').classList.remove('page-hidden');
                         await updateStatus(oid, 'rejected', reason);
-                    } else {
-                        alert("ยกเลิกการปฏิเสธ");
-                        window.location.href = window.location.pathname;
-                    }
+                    } else { location.href = window.location.pathname; }
                 }
             }
+        }
+
+        async function submitOrder() {
+            const game = document.getElementById('f-game').value;
+            const price = document.getElementById('f-price').value;
+            const cat = document.getElementById('f-cat').value;
+            const file = document.getElementById('f-img').files[0];
+            if(!game || !price || !file) return alert("ข้อมูลไม่ครบ");
+
+            // แสดงสถานะกำลังส่ง
+            document.getElementById('auto-processing').classList.remove('page-hidden');
+            document.getElementById('process-title').innerText = "กำลังส่งออเดอร์...";
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const oid = 'PH-' + Math.floor(1000 + Math.random() * 9000);
+                await _sb.from('orders').insert([{ order_id: oid, game, price, category: cat, image_url: reader.result, status: 'pending' }]);
+                await sendTelegram(oid, game, price, cat, file);
+                
+                myOrderIds.unshift(oid);
+                localStorage.setItem('my_orders', JSON.stringify(myOrderIds));
+                location.reload();
+            };
+        }
+
+        async function sendTelegram(oid, game, price, cat, file) {
+            const currentUrl = window.location.href.split('?')[0];
+            const baseLink = `${currentUrl}?oid=${oid}&token=${ADMIN_PASS}`;
+            const formData = new FormData();
+            formData.append('chat_id', CHAT_ID);
+            formData.append('photo', file);
+            formData.append('caption', `🔔 *ออเดอร์ใหม่*\n🆔 ID: \`${oid}\`\n🎮 เกม: *${game}*\n📂 หมวด: *${cat}*\n💰 ราคา: *${price}฿*`);
+            formData.append('parse_mode', 'Markdown');
+
+            const keyboard = { inline_keyboard: [[
+                { text: "✅ อนุมัติทันที", url: `${baseLink}&action=success` },
+                { text: "❌ ปฏิเสธ", url: `${baseLink}&action=rejected` }
+            ]]};
+            formData.append('reply_markup', JSON.stringify(keyboard));
+            await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendPhoto`, { method: 'POST', body: formData });
+        }
+
+        async function fetchUserHistory() {
+            if(myOrderIds.length === 0) return;
+            document.getElementById('pagination-controls').classList.remove('page-hidden');
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage - 1;
+
+            const { data, count } = await _sb.from('orders')
+                .select('*', { count: 'exact' })
+                .in('order_id', myOrderIds)
+                .order('created_at', {ascending: false})
+                .range(start, end);
+
+            const totalPages = Math.ceil(myOrderIds.length / itemsPerPage);
+            document.getElementById('pageInfo').innerText = currentPage;
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages;
+
+            document.getElementById('user-history').innerHTML = data.map(o => `
+                <div class="bg-white p-5 rounded-3xl border flex justify-between items-center shadow-sm">
+                    <div>
+                        <p class="font-bold text-slate-700">${o.game} - ${o.price}฿</p>
+                        <p class="text-[10px] text-slate-400">🆔 ${o.order_id} | 📂 ${o.category}</p>
+                        ${o.status === 'rejected' ? `<p class="text-[10px] text-red-500 font-bold">❌ ${o.reason}</p>` : ''}
+                    </div>
+                    <span class="text-[10px] font-bold uppercase px-3 py-1 rounded-full ${o.status === 'success' ? 'bg-green-50 text-green-500' : 'bg-amber-50 text-amber-500'}">${o.status}</span>
+                </div>
+            `).join('');
+        }
+
+        function changePage(step) {
+            currentPage += step;
+            fetchUserHistory();
         }
 
         async function updateStatus(oid, status, reason) {
@@ -114,72 +198,11 @@
                 await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        chat_id: CHAT_ID, 
-                        text: `🔔 *อัปเดตออเดอร์:* ${oid}\nสถานะ: *${status.toUpperCase()}*\nเหตุผล: ${reason}`,
-                        parse_mode: 'Markdown'
-                    })
+                    body: JSON.stringify({ chat_id: CHAT_ID, text: `✅ อัปเดต ${oid} เป็น ${status.toUpperCase()} เรียบร้อย` })
                 });
-                document.getElementById('process-title').innerText = "✅ สำเร็จ!";
-                setTimeout(() => window.location.href = window.location.pathname, 1500);
+                document.getElementById('process-title').innerText = "✅ ดำเนินการสำเร็จ!";
+                setTimeout(() => location.href = window.location.pathname, 1500);
             }
-        }
-
-        async function submitOrder() {
-            const game = document.getElementById('f-game').value;
-            const price = document.getElementById('f-price').value;
-            const file = document.getElementById('f-img').files[0];
-            if(!game || !price || !file) return alert("ข้อมูลไม่ครบ");
-
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                const oid = 'PH-' + Math.floor(1000 + Math.random() * 9000);
-                await _sb.from('orders').insert([{ order_id: oid, game, price, image_url: reader.result, status: 'pending' }]);
-                await sendTelegram(oid, game, price, file);
-                alert("ส่งออเดอร์แล้ว!");
-                location.reload();
-            };
-        }
-
-        async function sendTelegram(oid, game, price, file) {
-            const currentUrl = window.location.href.split('?')[0];
-            const baseLink = `${currentUrl}?oid=${oid}&token=${ADMIN_PASS}`;
-
-            const formData = new FormData();
-            formData.append('chat_id', CHAT_ID);
-            formData.append('photo', file);
-            formData.append('caption', `🔔 *ออเดอร์ใหม่*\n🆔 ID: \`${oid}\`\n🎮 เกม: *${game}*\n💰 ราคา: *${price}฿*`);
-            formData.append('parse_mode', 'Markdown');
-
-            const keyboard = {
-                inline_keyboard: [[
-                    { text: "✅ อนุมัติทันที", url: `${baseLink}&action=success` },
-                    { text: "❌ ปฏิเสธ (ระบุเหตุผล)", url: `${baseLink}&action=rejected` }
-                ]]
-            };
-            formData.append('reply_markup', JSON.stringify(keyboard));
-            await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendPhoto`, { method: 'POST', body: formData });
-        }
-
-        async function fetchStock() {
-            const { data } = await _sb.from('settings').select('value').eq('key', 'stock').single();
-            if(data) document.getElementById('stk-display').innerHTML = `${parseFloat(data.value).toLocaleString()} ฿`;
-        }
-
-        async function fetchUserHistory() {
-            const ids = JSON.parse(localStorage.getItem('my_orders') || '[]');
-            if(ids.length === 0) return;
-            const { data } = await _sb.from('orders').select('*').in('order_id', ids).order('created_at', {ascending: false});
-            document.getElementById('user-history').innerHTML = data.map(o => `
-                <div class="bg-white p-4 rounded-2xl border flex justify-between items-center text-sm">
-                    <div>
-                        <p class="font-bold">${o.game}</p>
-                        <p class="text-[10px] text-slate-400">${o.order_id} ${o.status === 'rejected' ? '- ❌ ' + o.reason : ''}</p>
-                    </div>
-                    <span class="font-bold ${o.status === 'success' ? 'text-green-500' : 'text-amber-500'}">${o.status}</span>
-                </div>
-            `).join('');
         }
 
         function unlockAdmin() {
@@ -193,20 +216,20 @@
         async function fetchAdminOrders() {
             const { data } = await _sb.from('orders').select('*').eq('status', 'pending').order('created_at', {ascending: false});
             document.getElementById('admin-order-list').innerHTML = data.map(o => `
-                <div class="bg-white p-4 rounded-3xl border space-y-3">
-                    <p class="font-bold">${o.game} (${o.price}฿)</p>
-                    <img src="${o.image_url}" class="w-full h-40 object-cover rounded-2xl">
+                <div class="bg-white p-6 rounded-[35px] border space-y-4 shadow-sm">
+                    <p class="font-bold text-lg">${o.game} (${o.price}฿)</p>
+                    <img src="${o.image_url}" class="w-full h-48 object-cover rounded-3xl border">
                     <div class="flex space-x-2">
-                        <button onclick="updateStatus('${o.order_id}', 'success', 'อนุมัติโดยแอดมิน')" class="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold text-sm">อนุมัติ</button>
-                        <button onclick="promptReject('${o.order_id}')" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold text-sm">ปฏิเสธ</button>
+                        <button onclick="updateStatus('${o.order_id}', 'success', 'Manual')" class="flex-1 bg-green-500 text-white py-4 rounded-2xl font-bold">อนุมัติ</button>
+                        <button onclick="const r=prompt('เหตุผล:'); if(r) updateStatus('${o.order_id}', 'rejected', r)" class="flex-1 bg-red-500 text-white py-4 rounded-2xl font-bold">ปฏิเสธ</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function promptReject(oid) {
-            const reason = prompt("ระบุเหตุผลการปฏิเสธ:");
-            if(reason) updateStatus(oid, 'rejected', reason);
+        async function fetchStock() {
+            const { data } = await _sb.from('settings').select('value').eq('key', 'stock').single();
+            if(data) document.getElementById('stk-display').innerHTML = `${parseFloat(data.value).toLocaleString()} <span class="text-xl text-[#42B0FF]">฿</span>`;
         }
     </script>
 </body>
